@@ -98,26 +98,34 @@ const deleteUser = async (id) => {
 
 const updateUser = async (id, user) => {
   try {
-    const updatedUser = await db.one(
-      "UPDATE users SET first_name=$1, last_name=$2, username=$3, email=$4, pronouns=$5, bio=$6, profile_img=$7 WHERE id=$8 RETURNING *",
-      [
-        user.first_name,
-        user.last_name,
-        user.username,
-        user.email,
-        user.pronouns,
-        user.bio,
-        user.profile_img,
-        id,
-      ]
-    );
+    let query = "UPDATE users SET first_name=$1, last_name=$2, pronouns=$3, bio=$4";
+    const queryValues = [user.first_name, user.last_name, user.pronouns, user.bio];
+    let paramIndex = 5; // Start index for additional parameters
 
+    // Check if an image file was uploaded
+    if (user.profile_img) {
+      query += ", profile_img=$" + paramIndex;
+      queryValues.push(user.profile_img);
+      paramIndex++; // Increment the index for the next parameter
+    }
+
+    query += " WHERE id=$" + paramIndex + " RETURNING *";
+    queryValues.push(id);
+
+    const updatedUser = await db.one(query, queryValues);
+
+
+    console.log(updatedUser)
     return updatedUser;
   } catch (error) {
     console.log(error);
     return error;
   }
 };
+
+
+
+
 
 const getUserByFirebaseId = async (firebase_id) => {
   try {
@@ -167,11 +175,11 @@ const getAllEventsForUsers = async (id) => {
 const getUserEventById = async (userId, eventId) => {
   try {
     const eventsByUser = await db.one(
-      `SELECT event_id, users_id, title, location_image, selected, added, rsvp, interested, to_char(date_event, 'MM/DD/YYYY') AS date_event
-      FROM users_events
-      JOIN users ON users.id = users_events.users_id 
-      JOIN events ON events.id = users_events.event_id
-      WHERE users_events.users_id = $1 AND users_events.event_id =$2`,
+      `SELECT ue.event_id, ue.users_id, e.title, e.location_image, ue.selected, ue.added, ue.rsvp, ue.interested, 
+      to_char(e.date_event, 'MM/DD/YYYY') AS date_event FROM users_events ue
+      JOIN users u ON u.id = ue.users_id
+      JOIN events e ON e.id = ue.event_id
+      WHERE ue.users_id = $1 AND ue.event_id =$2`,
       [userId, eventId]
     );
     return eventsByUser;

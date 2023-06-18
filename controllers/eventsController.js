@@ -23,35 +23,40 @@ events.use("/:eventId/comments", comm)
 
 //! GET ALL EVENTS
 events.get("/", async (req, res) => {
-    const allEvents = await getAllEvents();
-    const filters = req.query;
+  const allEvents = await getAllEvents();
+  const filters = req.query;
 
-    const filterEvents = allEvents.filter(event => {
-        let isValid = true;
+  const filterEvents = allEvents.filter((event) => {
+    let isValid = true;
 
-        for (key in filters) {
+    for (key in filters) {
+      if (key === "creator.id") {
+        const creatorIdFilter = parseInt(filters[key]);
+        const matchingCreator = event.creator.find(
+          (creator) => creator.id === creatorIdFilter
+        );
 
-            if (key === "creator.id") {
-                const creatorIdFilter = parseInt(filters[key]);
-                const matchingCreator = event.creator.find(creator => {
-                    return creator.id === creatorIdFilter;
-                });
+        isValid = isValid && (matchingCreator !== undefined);
+      } else if (key === "category_names.name") {
+        const categoryNamesFilter = filters[key].toLowerCase();
+        const matchingCategory = event.category_names.find(
+          (category) => category.name.toLowerCase() === categoryNamesFilter
+        );
 
-                isValid = isValid && (matchingCreator !== undefined);
-            }
+        isValid = isValid && (matchingCategory !== undefined);
+      } else if (isNaN(filters[key])) {
+        isValid = isValid && (event[key].toLowerCase() === filters[key].toLowerCase());
+      } else {
+        isValid = isValid && (event[key] == parseInt(filters[key]));
+      }
+    }
 
-         else if (isNaN(filters[key])) {
-                isValid = isValid && (event[key].toLowerCase() === filters[key].toLowerCase());
-            } else {
-                isValid = isValid && (event[key] == parseInt(filters[key]));
-            }
-        }
+    return isValid;
+  });
 
-        return isValid;
-    });
-
-    res.send(filterEvents);
+  res.send(filterEvents);
 });
+
 
 
 

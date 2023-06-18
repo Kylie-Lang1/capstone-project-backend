@@ -5,8 +5,8 @@ const getAllEvents = async () => {
     const allEvents = await db.manyOrNone(`
       SELECT events.*, 
       array_agg(json_build_object('id', categories.id, 'name', categories.name)) AS category_names,
-      array_agg(json_build_object('id', users.id, 'username', 
-      users.username, 'first_name', first_name, 'last_name', last_name, 'age', EXTRACT(YEAR FROM AGE(CURRENT_DATE, age)) )) AS creator,
+    array_agg(json_build_object('id', users.id, 'username', 
+      users.username, 'first_name', first_name, 'last_name', last_name, 'profile_img', users.profile_img,'age', EXTRACT(YEAR FROM AGE(CURRENT_DATE, age)) )) AS creator,
       to_char(start_time, 'HH:MI AM') AS start_time, 
       to_char(end_time, 'HH:MI AM') AS end_time,
       to_char(date_created, 'YYYY-MM-DD') AS date_created, 
@@ -34,7 +34,7 @@ const getEvent = async (id) => {
       SELECT events.*, 
       array_agg(json_build_object('id', categories.id, 'name', categories.name)) AS category_names,
       array_agg(json_build_object('id', users.id, 'username', 
-      users.username, 'first_name', first_name, 'last_name', last_name, 'age', EXTRACT(YEAR FROM AGE(CURRENT_DATE, age)) )) AS creator,
+      users.username, 'first_name', first_name, 'last_name', last_name, 'profile_img', users.profile_img,'age', EXTRACT(YEAR FROM AGE(CURRENT_DATE, age)) )) AS creator,
       to_char(start_time, 'HH:MI AM') AS start_time, 
       to_char(end_time, 'HH:MI AM') AS end_time,
       to_char(date_created, 'YYYY-MM-DD') AS date_created, 
@@ -66,70 +66,69 @@ const createEvent = async (event, categoryNames, creatorUsernames) => {
 
     // Retrieve creator IDs based on usernames
     const creatorIds = await db.manyOrNone(
-      `SELECT id FROM users WHERE username = ANY($1)`,
+      `SELECT DISTINCT id FROM users WHERE username = ANY($1)`,
       [creatorUsernames]
     );
 
-      if(categoryIds.length < 1){
-        return { error: 'Event most have at least one category.' };
-      }
+    if (categoryIds.length < 1) {
+      return { error: 'Event must have at least one category.' };
+    } else {
+      const newEvent = await db.one(
+        `INSERT INTO events (title, date_event, summary,
+           max_people, age_restriction, age_min, age_max, location, address, latitude, longitude, start_time, end_time, location_image, creator)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+         RETURNING *`,
+        [
+          event.title,
+          event.date_event,
+          event.summary,
+          event.max_people,
+          event.age_restriction,
+          event.age_min,
+          event.age_max,
+          event.location,
+          event.address,
+          event.latitude,
+          event.longitude,
+          event.start_time,
+          event.end_time,
+          event.location_image,
+          event.creator, // Assuming there is only one creator
+        ]
+      );
 
-      else{
-        const newEvent = await db.one(
-          `INSERT INTO events (title, date_event, summary,
-             max_people, age_restriction, age_min, age_max, location, address, latitude, longitude, start_time, end_time, location_image, creator)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-           RETURNING *`,
-          [
-            event.title,
-            event.date_event,
-            event.summary,
-            event.max_people,
-            event.age_restriction,
-            event.age_min,
-            event.age_max,
-            event.location,
-            event.address,
-            event.latitude,
-            event.longitude,
-            event.start_time,
-            event.end_time,
-            event.location_image,
-            event.creator // Assuming there is only one creator
-          ]
-        );
-    
-        // Insert event-category relationships into events_categories table
-        const eventCategoryValues = categoryIds
-          .map((categoryId) => `(${newEvent.id}, ${categoryId.id})`)
-          .join(',');
-        await db.none(
-          `INSERT INTO events_categories (event_id, category_id) VALUES ${eventCategoryValues}`
-        );
-    
-        // Add category_names and creator arrays to the new event object
-        newEvent.category_names = categoryNames.map((name, index) => ({
-          id: categoryIds[index].id,
-          name: name,
-        }));
-    
-        newEvent.creator = creatorIds.map((username, index) => ({
-          id: creatorIds[index].id,
-          username: username,
-          first_name: first_name,
-          last_name: last_name,
-          age: age
-        }));
-    
-        return newEvent;
+      // Insert event-category relationships into events_categories table
+      const eventCategoryValues = categoryIds
+        .map((categoryId) => `(${newEvent.id}, ${categoryId.id})`)
+        .join(',');
+      await db.none(
+        `INSERT INTO events_categories (event_id, category_id) VALUES ${eventCategoryValues}`
+      );
 
-      }
+      // Add category_names and creator arrays to the new event object
+      newEvent.category_names = categoryNames.map((name, index) => ({
+        id: categoryIds[index].id,
+        name: name,
+      }));
+
+      newEvent.creator = creatorIds.map((creator) => ({
+        id: creator.id,
+        username: creator.username,
+        first_name: creator.first_name,
+        last_name: creator.last_name,
+        profile_img: creator.profile_img,
+        age: creator.age,
+      }));
+
+      return newEvent;
+    }
     // Insert new event into events table
   } catch (error) {
     console.log(error);
     return error;
   }
 };
+
 
 
 

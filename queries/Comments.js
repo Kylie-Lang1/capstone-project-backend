@@ -3,17 +3,31 @@ const db = require("../db/dbConfig")
 
 
 const getAllComments = async (event_id) => {
-    try{
-       const allComments = await db.any(
-           "SELECT *, to_char(time, 'MM/DD/YYYY') AS time FROM comments WHERE events_id = $1",
-           event_id
-       ) 
-       return allComments
-    }
-    catch(error){
-        return error
-    }
-}
+  try {
+    const allComments = await db.any(
+      `SELECT comments.id, comments.comment, to_char(time, 'MM/DD/YYYY') AS time,
+        json_build_object(
+          'user_id', comments.user_id,
+          'first_name', users.first_name,
+          'last_name', users.last_name,
+          'username', users.username
+        ) AS creator
+      FROM comments
+      JOIN users ON comments.user_id = users.id
+      WHERE comments.events_id = $1
+      ORDER BY comments.time ASC`,
+      event_id
+    );
+    return allComments;
+  } catch (error) {
+    console.log(error);
+    return error;
+  }
+};
+
+   
+  
+  
 
 const getComment = async (id) => {
     try{

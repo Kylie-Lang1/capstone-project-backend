@@ -1,4 +1,29 @@
 const express = require("express");
+
+const multer = require('multer')
+
+const path = require('path')
+
+const {v4: uuidv4} = require('uuid')
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb){
+    cb(null, './Images')
+  },
+  filename: function (req , file, cb){
+    const uniqueSuffix = Date.now() + '-' + uuidv4();
+    const extension = path.extname(file.originalname);
+    cb(null, uniqueSuffix + extension);
+  }
+})
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+});
+
 const users = express.Router({ mergeParams: true });
 const {
   getAllUsers,
@@ -81,7 +106,7 @@ users.delete("/:id", async (req, res) => {
   }
 });
 
-users.put("/:id", async (req, res) => {
+users.put("/:id",  upload.single('profile_img'), async (req, res) => {
   try {
     const { id } = req.params;
     const updatedUser = await updateUser(id, req.body);

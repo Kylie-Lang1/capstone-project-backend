@@ -141,6 +141,8 @@ const deleteFriends = async (userId, friendId) => {
     return error;
   }
 };
+
+
 module.exports = {
   sendFriendRequest,
   acceptFriendRequest,

@@ -137,8 +137,8 @@ VALUES
 --     (1 , 5 , 'Yoga in the Park', 'June 25, 2023', 'Juniper Valley Park', 'Juniper Valley Park', 'url for the image', FALSE, TRUE , FALSE, TRUE),
 
 
--- INSERT INTO users (first_name, last_name, age, username, email, profile_img, firebase_id)VALUES 
--- ('John', 'Doe', '09/10/1998', 'johndoe', 'johndoe@example.com', 'https://example.com/profile1.jpg', '100')
+INSERT INTO users (first_name, last_name, age, username, email, profile_img, firebase_id)VALUES 
+('John', 'Doe', '09/10/1998', 'johndoe', 'johndoe@example.com', 'https://example.com/profile1.jpg', '100')
 
 
 -- For testing

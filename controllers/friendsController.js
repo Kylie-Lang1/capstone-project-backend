@@ -35,12 +35,12 @@ friends.post("/:userId/accept/:senderId", async (req, res) => {
 friends.delete("/:userId/denied/:senderId", async (req, res) => {
   const { userId, senderId } = req.params;
 
-  const deleteRequest = await deleteFriendRequest(userId, senderId);
-
-  if (deleteRequest) {
-    res.status(200).json(deleteRequest);
-  } else {
-    res.status(404).json("Request not found");
+  try {
+    await deleteFriendRequest(userId, senderId);
+    res.status(200).json("Request deleted successfully");
+  } catch (error) {
+    console.log(error);
+    res.status(500).json("An error occurred while deleting the request");
   }
 });
 

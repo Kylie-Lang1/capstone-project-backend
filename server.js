@@ -1,17 +1,18 @@
-
 const express = require("express");
 const socket = require("socket.io");
 const app = express();
 const cors = require("cors");
+const bodyParser = require("body-parser");
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 const server = app.listen("8080", () => {
   console.log("Server Running on Port 8080...");
 });
 
-const eventsController = require("./controllers/EventsController"); 
+const eventsController = require("./controllers/eventsController"); 
 
 const categoryController = require("./controllers/categoriesController")
 
