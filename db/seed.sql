@@ -47,7 +47,7 @@ VALUES
 
 INSERT INTO events_categories (event_id, category_id)
 VALUES
-     (1, 7),
+     (1, 2),
      (1, 9),
      (2, 8),
      (2, 10),
