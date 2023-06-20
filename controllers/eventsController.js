@@ -179,17 +179,14 @@ events.get(`/:id/cohosting`, async (req, res) => {
 
 //Delete co-host from an event 
 events.delete(`/:userId/deletehost/:eventId`, async (req , res) => {
-
-const {userId , eventId} = req.params
-
-const host = await deleteCoHost(userId , eventId)
-
-if(host.length > 0){
-  res.status(200).json(host);
-}
-else {
-        res.status(404).json({ error: "Host not found!"});
-    }
+  try{
+    const {userId , eventId} = req.params
+    await deleteCoHost(userId , eventId)
+    res.status(200).json(host);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "An error occurred while deleting cohost" });
+  }
 })
 
 module.exports = events;
